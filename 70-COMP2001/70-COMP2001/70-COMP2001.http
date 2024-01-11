@@ -1,6 +1,0 @@
-@_70_COMP2001_HostAddress = http://localhost:5044
-
-GET {{_70_COMP2001_HostAddress}}/weatherforecast/
-Accept: application/json
-
-###

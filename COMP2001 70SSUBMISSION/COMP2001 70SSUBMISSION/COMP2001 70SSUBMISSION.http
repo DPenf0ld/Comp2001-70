@@ -1,0 +1,6 @@
+@COMP2001_70SSUBMISSION_HostAddress = http://localhost:5160
+
+GET {{COMP2001_70SSUBMISSION_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
