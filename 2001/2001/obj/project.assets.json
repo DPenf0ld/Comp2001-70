@@ -522,11 +522,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\woody\\source\\repos\\2001\\2001\\2001.csproj",
+      "projectUniqueName": "C:\\Comp2001-70\\2001\\2001\\2001.csproj",
       "projectName": "2001",
-      "projectPath": "C:\\Users\\woody\\source\\repos\\2001\\2001\\2001.csproj",
+      "projectPath": "C:\\Comp2001-70\\2001\\2001\\2001.csproj",
       "packagesPath": "C:\\Users\\woody\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\woody\\source\\repos\\2001\\2001\\obj\\",
+      "outputPath": "C:\\Comp2001-70\\2001\\2001\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\woody\\AppData\\Roaming\\NuGet\\NuGet.Config",
