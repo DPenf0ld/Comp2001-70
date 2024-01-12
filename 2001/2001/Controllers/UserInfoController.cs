@@ -6,14 +6,26 @@ using System.Reflection.PortableExecutable;
 
 namespace _2001.Controllers
 {
+    public class UserInformationUpdateModel
+    {
+        public string ColumnName { get; set; }
+        public string ColumnValue { get; set; }
+
+        // Method to get the value of the column
+        public object GetValue()
+        {
+            return ColumnValue;
+        }
+    }
+
     public class UserInformationModel
     {
         //CW2.User_Information
         public int user_id { get; set; }
         public string email { get; set; }
         public string member_location { get; set; }
-        public double height { get; set; }
-        public double weight { get; set; }
+        public int height { get; set; }
+        public int weight { get; set; }
         public DateTime birthday { get; set; }
         public string password { get; set; }
         public string username { get; set; }
@@ -218,10 +230,67 @@ namespace _2001.Controllers
 
 
         // PUT api/<UserInfoController>/5
-        [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
+        [HttpPut("{userId}")]
+        public IActionResult Put(int userId, [FromBody] UserInformationUpdateModel updateModel)
         {
+            if (updateModel == null) //checks to see if there is data
+            {
+                return BadRequest("Invalid update data");
+            }
+
+            string connectionString = Configuration.GetConnectionString("DefaultConnection");
+
+            using (SqlConnection connection = new SqlConnection(connectionString))
+            {
+                connection.Open(); //open connection
+
+                // Begin a transaction
+                using (SqlTransaction transaction = connection.BeginTransaction())
+                {
+                    try
+                    {
+                        // Check if the specified user_id exists
+                        string checkUserExistsQuery = "SELECT COUNT(*) FROM CW2.User_Information WHERE user_id = @UserId";
+                        using (SqlCommand checkUserExistsCommand = new SqlCommand(checkUserExistsQuery, connection, transaction))
+                        {
+                            checkUserExistsCommand.Parameters.AddWithValue("@UserId", userId);
+                            int userCount = (int)checkUserExistsCommand.ExecuteScalar();
+
+                            if (userCount == 0)
+                            {
+                                return NotFound("User not found");
+                            }
+                        }
+
+                        // Update the specified column in CW2.User_Information 
+                        string updateColumnQuery = $"UPDATE CW2.User_Information SET {updateModel.ColumnName} = @{updateModel.ColumnName} WHERE user_id = @UserId";
+                        using (SqlCommand updateColumnCommand = new SqlCommand(updateColumnQuery, connection, transaction))
+                        {
+                            updateColumnCommand.Parameters.AddWithValue("@UserId", userId);
+                            updateColumnCommand.Parameters.AddWithValue($"@{updateModel.ColumnName}", updateModel.GetValue());
+
+                            updateColumnCommand.ExecuteNonQuery();
+                        }
+
+                        // Commit the transaction if everything is successful
+                        transaction.Commit();
+
+                        return Ok("User information updated successfully for user_id {userId}");
+                    }
+                    catch (Exception ex)
+                    {
+                        // Rollback the transaction in case of an exception
+                        transaction.Rollback();
+
+                        // return message
+                        Console.WriteLine(ex.Message);
+
+                        return BadRequest("Failed to update user information for user_id {userId}");
+                    }
+                }
+            }
         }
+
 
         // DELETE api/<UserInfoController>/5
         [HttpDelete("{id}")]
