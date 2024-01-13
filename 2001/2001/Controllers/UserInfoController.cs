@@ -30,7 +30,7 @@ namespace _2001.Controllers
         public string ColumnName { get; set; }
         public string ColumnValue { get; set; }
 
-        // Method to get the value of the column
+        // get the value of the column
         public object GetValue()
         {
             return ColumnValue;
@@ -58,7 +58,7 @@ namespace _2001.Controllers
             using (SqlConnection connection = new SqlConnection(connectionString))
             {
                 connection.Open();
-                string sqlSelect = "SELECT * FROM CW2.User_Information";//add sql command
+                string sqlSelect = "SELECT * FROM CW2.CombinedData";//add sql command
 
                 using (SqlCommand command = new SqlCommand(sqlSelect, connection))
                 {
@@ -69,7 +69,7 @@ namespace _2001.Controllers
 
                         string jsonResult = Newtonsoft.Json.JsonConvert.SerializeObject(datatable);
 
-                        // Close the connection after retrieving data
+                        // Close connection
                         connection.Close();
 
                         return Content(jsonResult, "application/json");
@@ -91,22 +91,23 @@ namespace _2001.Controllers
             {
                 connection.Open();
 
-                // Use parameterized query to avoid SQL injection
-                string sqlSelect = "SELECT * FROM CW2.User_Information WHERE user_id = @UserId";
+                // sql command
+                string sqlSelect = "SELECT * FROM CW2.CombinedData WHERE user_id = @UserId";
 
                 using (SqlCommand command = new SqlCommand(sqlSelect, connection))
                 {
-                    // Add parameter for UserId
+                    // Add my parameter
                     command.Parameters.AddWithValue("@UserId", id);
 
-                    using (SqlDataReader reader = command.ExecuteReader())
+                    // fills DataTable
+                    using (SqlDataAdapter dataAdapter = new SqlDataAdapter(command))
                     {
                         var dataTable = new System.Data.DataTable();
-                        dataTable.Load(reader);
+                        dataAdapter.Fill(dataTable);
 
                         string jsonResult = Newtonsoft.Json.JsonConvert.SerializeObject(dataTable);
 
-                        // Close the connection after retrieving data
+                        // Close the connection
                         connection.Close();
 
                         return Content(jsonResult, "application/json");
@@ -114,6 +115,9 @@ namespace _2001.Controllers
                 }
             }
         }
+
+
+
 
         // POST api/<UserInfoController>
 
@@ -131,7 +135,7 @@ namespace _2001.Controllers
             {
                 connection.Open();
 
-                // Begin a transaction
+                // Begin transaction
                 using (SqlTransaction transaction = connection.BeginTransaction())
                 {
                     try
@@ -157,18 +161,18 @@ namespace _2001.Controllers
                             command.Parameters.AddWithValue("@activity_id", user.ActivityId);
 
 
-                            // Execute the stored procedure
+                            // Run stored procedure
                             command.ExecuteNonQuery();
                         }
 
-                        // Commit the transaction if everything is successful
+                        // Commit the transaction if successful
                         transaction.Commit();
 
                         return Ok("User added successfully");
                     }
                     catch (Exception ex)
                     {
-                        // Rollback the transaction in case of an exception
+                        // Rollback if error
                         transaction.Rollback();
 
                         // Return message
@@ -218,7 +222,7 @@ namespace _2001.Controllers
                             }
                         }
 
-                        // Update the specified column in CW2.User_Information 
+                        // Update the column in CW2.User_Information 
                         string updateColumnQuery = "UPDATE CW2.User_Information SET " + updateModel.ColumnName + " = @" + updateModel.ColumnName + " WHERE user_id = @UserId";
                         using (SqlCommand updateColumnCommand = new SqlCommand(updateColumnQuery, connection, transaction))
                         {
@@ -228,14 +232,14 @@ namespace _2001.Controllers
                             updateColumnCommand.ExecuteNonQuery();
                         }
 
-                        // Commit the transaction if everything is successful
+                        // Commit the transaction if successful
                         transaction.Commit();
 
                         return Ok("User information updated successfully for user_id {userId}");
                     }
                     catch (Exception ex)
                     {
-                        // Rollback the transaction in case of an exception
+                        // Rollback the transaction if error
                         transaction.Rollback();
 
                         // return message
@@ -267,21 +271,21 @@ namespace _2001.Controllers
                         {
                             command.CommandType = CommandType.StoredProcedure;
 
-                            // Add parameter for user_id
+                            // Add parameter
                             command.Parameters.AddWithValue("@user_id", id);
 
-                            // Execute the stored procedure
+                            // Run stored procedure
                             command.ExecuteNonQuery();
                         }
 
-                        // Commit the transaction if everything is successful
+                        // Commit the transaction if successful
                         transaction.Commit();
 
                         return Ok("User deleted successfully");
                     }
                     catch (Exception ex)
                     {
-                        // Rollback the transaction in case of an exception
+                        // Rollback the transaction if errors
                         transaction.Rollback();
 
                         // Return message
