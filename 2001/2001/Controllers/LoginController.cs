@@ -31,6 +31,8 @@ namespace _2001.Controllers
         [HttpPost]
         public IActionResult Login(string username, string password)
         {
+            
+
             //checks if username and password has been filled in
             if (@username == null || string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
             {
@@ -53,7 +55,8 @@ namespace _2001.Controllers
 
                         if (result != null)
                         {
-                            return Ok("Login successful");
+                         UserLogin.Loggedin = true;
+                         return Ok("Login successful");
                         }
                         else
                         {
@@ -61,9 +64,9 @@ namespace _2001.Controllers
                         }
                     }
                 }
+
         }
     }
-
 
 
 }
