@@ -9,7 +9,6 @@ namespace _2001.Controllers
 {
     public class UserInformationInsertModel
     {
-
         public string AboutMe { get; set; }
         public string Units { get; set; }
         public string ActivityTimePreference { get; set; }
@@ -38,10 +37,6 @@ namespace _2001.Controllers
         }
     }
 
-    
-
-
-
     [Route("api/[controller]")]
     [ApiController]
     public class UserInfoController : ControllerBase
@@ -53,19 +48,12 @@ namespace _2001.Controllers
             Configuration = configuration;
         }
 
-
         // GET: api/<UserInfoController>
         //get whole table
-       
-
-
-
         [HttpGet]
         public IActionResult Get() //changes format so results are on separate lines
         {
             string connectionString = Configuration.GetConnectionString("DefaultConnection"); //change to connection string
-
-
 
             using (SqlConnection connection = new SqlConnection(connectionString))
             {
@@ -85,24 +73,12 @@ namespace _2001.Controllers
                         connection.Close();
 
                         return Content(jsonResult, "application/json");
-
-
-
                     }
                 }
 
             }
 
         }
-
-
-
-
-
-
-
-
-
 
         // GET api/<UserInfoController>/5
         //get data under id
@@ -243,11 +219,11 @@ namespace _2001.Controllers
                         }
 
                         // Update the specified column in CW2.User_Information 
-                        string updateColumnQuery = $"UPDATE CW2.User_Information SET {updateModel.ColumnName} = @{updateModel.ColumnName} WHERE user_id = @UserId";
+                        string updateColumnQuery = "UPDATE CW2.User_Information SET " + updateModel.ColumnName + " = @" + updateModel.ColumnName + " WHERE user_id = @UserId";
                         using (SqlCommand updateColumnCommand = new SqlCommand(updateColumnQuery, connection, transaction))
                         {
                             updateColumnCommand.Parameters.AddWithValue("@UserId", userId);
-                            updateColumnCommand.Parameters.AddWithValue($"@{updateModel.ColumnName}", updateModel.GetValue());
+                            updateColumnCommand.Parameters.AddWithValue("@" + updateModel.ColumnName, updateModel.GetValue());
 
                             updateColumnCommand.ExecuteNonQuery();
                         }
@@ -272,10 +248,51 @@ namespace _2001.Controllers
         }
 
 
-        // DELETE api/<UserInfoController>/5
         [HttpDelete("{id}")]
-        public void Delete(int id)
+        public IActionResult Delete(int id)
         {
+            string connectionString = Configuration.GetConnectionString("DefaultConnection");
+
+            using (SqlConnection connection = new SqlConnection(connectionString))
+            {
+                connection.Open(); //open connection
+
+                // Begin a transaction
+                using (SqlTransaction transaction = connection.BeginTransaction())
+                {
+                    try
+                    {
+                        // Use the stored procedure to delete data
+                        using (SqlCommand command = new SqlCommand("CW2.delete_profile", connection, transaction))
+                        {
+                            command.CommandType = CommandType.StoredProcedure;
+
+                            // Add parameter for user_id
+                            command.Parameters.AddWithValue("@user_id", id);
+
+                            // Execute the stored procedure
+                            command.ExecuteNonQuery();
+                        }
+
+                        // Commit the transaction if everything is successful
+                        transaction.Commit();
+
+                        return Ok("User deleted successfully");
+                    }
+                    catch (Exception ex)
+                    {
+                        // Rollback the transaction in case of an exception
+                        transaction.Rollback();
+
+                        // Return message
+                        Console.WriteLine(ex.Message);
+
+                        return BadRequest("Failed to delete user");
+                    }
+                }
+            }
         }
+
+
     }
 }
