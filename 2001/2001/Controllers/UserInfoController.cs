@@ -86,34 +86,41 @@ namespace _2001.Controllers
         public IActionResult Get(int id)
         {
             string connectionString = Configuration.GetConnectionString("DefaultConnection");
-
-            using (SqlConnection connection = new SqlConnection(connectionString))
-            {
-                connection.Open();
-
-                // sql command
-                string sqlSelect = "SELECT * FROM CW2.CombinedData WHERE user_id = @UserId";
-
-                using (SqlCommand command = new SqlCommand(sqlSelect, connection))
+            if (id == UserLogin.userloginid) {
+                using (SqlConnection connection = new SqlConnection(connectionString))
                 {
-                    // Add my parameter
-                    command.Parameters.AddWithValue("@UserId", id);
+                    connection.Open();
 
-                    // fills DataTable
-                    using (SqlDataAdapter dataAdapter = new SqlDataAdapter(command))
+                    // sql command
+                    string sqlSelect = "SELECT * FROM CW2.CombinedData WHERE user_id = @UserId";
+
+                    using (SqlCommand command = new SqlCommand(sqlSelect, connection))
                     {
-                        var dataTable = new System.Data.DataTable();
-                        dataAdapter.Fill(dataTable);
+                        // Add my parameter
+                        command.Parameters.AddWithValue("@UserId", id);
 
-                        string jsonResult = Newtonsoft.Json.JsonConvert.SerializeObject(dataTable);
+                        // fills DataTable
+                        using (SqlDataAdapter dataAdapter = new SqlDataAdapter(command))
+                        {
+                            var dataTable = new System.Data.DataTable();
+                            dataAdapter.Fill(dataTable);
 
-                        // Close the connection
-                        connection.Close();
+                            string jsonResult = Newtonsoft.Json.JsonConvert.SerializeObject(dataTable);
 
-                        return Content(jsonResult, "application/json");
+                            // Close the connection
+                            connection.Close();
+
+                            return Content(jsonResult, "application/json");
+                        }
                     }
                 }
+
             }
+            else
+            {
+                return Unauthorized("Unauthorized access");
+            }
+           
         }
 
 
@@ -190,8 +197,8 @@ namespace _2001.Controllers
 
 
         // PUT api/<UserInfoController>/5
-        [HttpPut("{userId}")]
-        public IActionResult Put(int userId, [FromBody] UserInformationUpdateModel updateModel)
+        [HttpPut("{id}")]
+        public IActionResult Put(int id, [FromBody] UserInformationUpdateModel updateModel)
         {
             if (updateModel == null) //checks to see if there is data
             {
@@ -199,55 +206,62 @@ namespace _2001.Controllers
             }
 
             string connectionString = Configuration.GetConnectionString("DefaultConnection");
-
-            using (SqlConnection connection = new SqlConnection(connectionString))
+            if (id == UserLogin.userloginid)
             {
-                connection.Open(); //open connection
 
-                // Begin a transaction
-                using (SqlTransaction transaction = connection.BeginTransaction())
+                using (SqlConnection connection = new SqlConnection(connectionString))
                 {
-                    try
-                    {
-                        // Check if the specified user_id exists
-                        string checkUserExistsQuery = "SELECT COUNT(*) FROM CW2.User_Information WHERE user_id = @UserId";
-                        using (SqlCommand checkUserExistsCommand = new SqlCommand(checkUserExistsQuery, connection, transaction))
-                        {
-                            checkUserExistsCommand.Parameters.AddWithValue("@UserId", userId);
-                            int userCount = (int)checkUserExistsCommand.ExecuteScalar();
+                    connection.Open(); //open connection
 
-                            if (userCount == 0)
+                    // Begin a transaction
+                    using (SqlTransaction transaction = connection.BeginTransaction())
+                    {
+                        try
+                        {
+                            // Check if the specified user_id exists
+                            string checkUserExistsQuery = "SELECT COUNT(*) FROM CW2.User_Information WHERE user_id = @UserId";
+                            using (SqlCommand checkUserExistsCommand = new SqlCommand(checkUserExistsQuery, connection, transaction))
                             {
-                                return NotFound("User not found");
+                                checkUserExistsCommand.Parameters.AddWithValue("@UserId", id);
+                                int userCount = (int)checkUserExistsCommand.ExecuteScalar();
+
+                                if (userCount == 0)
+                                {
+                                    return NotFound("User not found");
+                                }
                             }
-                        }
 
-                        // Update the column in CW2.User_Information 
-                        string updateColumnQuery = "UPDATE CW2.User_Information SET " + updateModel.ColumnName + " = @" + updateModel.ColumnName + " WHERE user_id = @UserId";
-                        using (SqlCommand updateColumnCommand = new SqlCommand(updateColumnQuery, connection, transaction))
+                            // Update the column in CW2.User_Information 
+                            string updateColumnQuery = "UPDATE CW2.User_Information SET " + updateModel.ColumnName + " = @" + updateModel.ColumnName + " WHERE user_id = @UserId";
+                            using (SqlCommand updateColumnCommand = new SqlCommand(updateColumnQuery, connection, transaction))
+                            {
+                                updateColumnCommand.Parameters.AddWithValue("@UserId", id);
+                                updateColumnCommand.Parameters.AddWithValue("@" + updateModel.ColumnName, updateModel.GetValue());
+
+                                updateColumnCommand.ExecuteNonQuery();
+                            }
+
+                            // Commit the transaction if successful
+                            transaction.Commit();
+
+                            return Ok("User information updated successfully");
+                        }
+                        catch (Exception ex)
                         {
-                            updateColumnCommand.Parameters.AddWithValue("@UserId", userId);
-                            updateColumnCommand.Parameters.AddWithValue("@" + updateModel.ColumnName, updateModel.GetValue());
+                            // Rollback the transaction if error
+                            transaction.Rollback();
 
-                            updateColumnCommand.ExecuteNonQuery();
+                            // return message
+                            Console.WriteLine(ex.Message);
+
+                            return BadRequest("Failed to update user information");
                         }
-
-                        // Commit the transaction if successful
-                        transaction.Commit();
-
-                        return Ok("User information updated successfully for user_id {userId}");
-                    }
-                    catch (Exception ex)
-                    {
-                        // Rollback the transaction if error
-                        transaction.Rollback();
-
-                        // return message
-                        Console.WriteLine(ex.Message);
-
-                        return BadRequest("Failed to update user information for user_id {userId}");
                     }
                 }
+            }
+            else
+            {
+                return Unauthorized("Unauthorized access");
             }
         }
 

@@ -53,9 +53,10 @@ namespace _2001.Controllers
 
                         var result = command.ExecuteScalar();
 
-                        if (result != null)
-                        {
-                         UserLogin.Loggedin = true;
+                        if (result != null && int.TryParse(result.ToString(), out int userId))
+                    {
+                        UserLogin.userloginid = userId;
+                        UserLogin.Loggedin = true;
                          return Ok("Login successful");
                         }
                         else

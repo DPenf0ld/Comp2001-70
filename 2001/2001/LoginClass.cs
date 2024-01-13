@@ -5,13 +5,13 @@
 
         //creates variabless that can be used across controllers
         public static bool Loggedin { get; set; } 
-        public static int ProfileId { get; set; }
         public static bool Admin { get; set; }
+        public static int userloginid { get; set; }
 
         public UserLogin() //default class before logging in
         { 
             Loggedin = false;
-            ProfileId = 0;
+            userloginid = 0;
             Admin = false;
         }
     }
