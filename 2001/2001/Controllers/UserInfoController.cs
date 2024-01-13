@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using System.Data;
 using System.Data.SqlClient;
 using System.Reflection.PortableExecutable;
 
@@ -6,6 +7,25 @@ using System.Reflection.PortableExecutable;
 
 namespace _2001.Controllers
 {
+    public class UserInformationInsertModel
+    {
+
+        public string AboutMe { get; set; }
+        public string Units { get; set; }
+        public string ActivityTimePreference { get; set; }
+        public string MarketingLanguage { get; set; }
+        public int UserId { get; set; }
+        public string Email { get; set; }
+        public string MemberLocation { get; set; }
+        public int Height { get; set; }
+        public int Weight { get; set; }
+        public DateTime Birthday { get; set; }
+        public string Password { get; set; }
+        public string Username { get; set; }
+        public int ActivityId { get; set; }
+
+    }
+
     public class UserInformationUpdateModel
     {
         public string ColumnName { get; set; }
@@ -18,27 +38,7 @@ namespace _2001.Controllers
         }
     }
 
-    public class UserInformationModel
-    {
-        //CW2.User_Information
-        public int user_id { get; set; }
-        public string email { get; set; }
-        public string member_location { get; set; }
-        public int height { get; set; }
-        public int weight { get; set; }
-        public DateTime birthday { get; set; }
-        public string password { get; set; }
-        public string username { get; set; }
-
-        // CW2.User_Profile_Attributes
-        public string about_me { get; set; }
-        public string units { get; set; }
-        public string activity_time_preference { get; set; }
-        public string marketing_language { get; set; }
-
-        // Additional property for CW2.User_ActivityID
-        public int activity_id { get; set; }
-    }
+    
 
 
 
@@ -140,9 +140,9 @@ namespace _2001.Controllers
         }
 
         // POST api/<UserInfoController>
-       
+
         [HttpPost]
-        public IActionResult Post([FromBody] UserInformationModel user)
+        public IActionResult Post([FromBody] UserInformationInsertModel user)
         {
             if (user == null)
             {
@@ -160,53 +160,29 @@ namespace _2001.Controllers
                 {
                     try
                     {
-                        // Insert into CW2.User_Profile_Attributes table
-                        string sqlInsertAttributes = "INSERT INTO CW2.User_Profile_Attributes " +
-                                                     "(user_attributes_id, about_me, units, activity_time_preference, marketing_language) " +
-                                                     "VALUES " +
-                                                     "(@UserId, @AboutMe, @Units, @ActivityTimePreference, @MarketingLanguage)";
-
-                        using (SqlCommand commandAttributes = new SqlCommand(sqlInsertAttributes, connection, transaction))
+                        // Use the stored procedure to insert data
+                        using (SqlCommand command = new SqlCommand("CW2.InsertUserProfileAndInformation", connection, transaction))
                         {
-                            
-                            commandAttributes.Parameters.AddWithValue("@AboutMe", user.about_me);
-                            commandAttributes.Parameters.AddWithValue("@Units", user.units);
-                            commandAttributes.Parameters.AddWithValue("@ActivityTimePreference", user.activity_time_preference);
-                            commandAttributes.Parameters.AddWithValue("@MarketingLanguage", user.marketing_language);
+                            command.CommandType = CommandType.StoredProcedure;
 
-                            commandAttributes.ExecuteNonQuery();
-                        }
+                            // Add parameters
+                            command.Parameters.AddWithValue("@user_id", user.UserId); // Change to UserId
+                            command.Parameters.AddWithValue("@username", user.Username);
+                            command.Parameters.AddWithValue("@email", user.Email);
+                            command.Parameters.AddWithValue("@member_location", user.MemberLocation);
+                            command.Parameters.AddWithValue("@height", user.Height);
+                            command.Parameters.AddWithValue("@weight", user.Weight);
+                            command.Parameters.AddWithValue("@birthday", user.Birthday);
+                            command.Parameters.AddWithValue("@password", user.Password);
+                            command.Parameters.AddWithValue("@about_me", user.AboutMe);
+                            command.Parameters.AddWithValue("@units", user.Units);
+                            command.Parameters.AddWithValue("@activity_time_preference", user.ActivityTimePreference);
+                            command.Parameters.AddWithValue("@marketing_language", user.MarketingLanguage);
+                            command.Parameters.AddWithValue("@activity_id", user.ActivityId);
 
-                        // Insert into CW2.User_Information table
-                        string sqlInsertUserInfo = "INSERT INTO CW2.User_Information " +
-                                                   "(user_id, email, member_location, height, weight, birthday, password, user_attributes_id, username) " +
-                                                   "VALUES " +
-                                                   "(@UserId, @Email, @MemberLocation, @Height, @Weight, @Birthday, @Password, @UserId, @Username)";
 
-                        using (SqlCommand commandUserInfo = new SqlCommand(sqlInsertUserInfo, connection, transaction))
-                        {
-                            commandUserInfo.Parameters.AddWithValue("@UserId", user.user_id);
-                            commandUserInfo.Parameters.AddWithValue("@Email", user.email);
-                            commandUserInfo.Parameters.AddWithValue("@MemberLocation", user.member_location);
-                            commandUserInfo.Parameters.AddWithValue("@Height", user.height);
-                            commandUserInfo.Parameters.AddWithValue("@Weight", user.weight);
-                            commandUserInfo.Parameters.AddWithValue("@Birthday", user.birthday);
-                            commandUserInfo.Parameters.AddWithValue("@Password", user.password);
-                            commandUserInfo.Parameters.AddWithValue("@Username", user.username);
-
-                            commandUserInfo.ExecuteNonQuery();
-                        }
-
-                        // Insert into CW2.User_ActivityID table
-                        string sqlInsertUserActivity = "INSERT INTO CW2.User_ActivityID (user_id, activity_id) " +
-                                                       "VALUES (@UserId, @ActivityId)";
-
-                        using (SqlCommand commandUserActivity = new SqlCommand(sqlInsertUserActivity, connection, transaction))
-                        {
-                            commandUserActivity.Parameters.AddWithValue("@UserId", user.user_id);
-                            commandUserActivity.Parameters.AddWithValue("@ActivityId", user.activity_id);
-
-                            commandUserActivity.ExecuteNonQuery();
+                            // Execute the stored procedure
+                            command.ExecuteNonQuery();
                         }
 
                         // Commit the transaction if everything is successful
@@ -219,7 +195,7 @@ namespace _2001.Controllers
                         // Rollback the transaction in case of an exception
                         transaction.Rollback();
 
-                        // Log the exception or handle it as needed
+                        // Return message
                         Console.WriteLine(ex.Message);
 
                         return BadRequest("Failed to add user");
@@ -227,6 +203,10 @@ namespace _2001.Controllers
                 }
             }
         }
+
+
+
+
 
 
         // PUT api/<UserInfoController>/5
