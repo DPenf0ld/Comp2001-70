@@ -29,17 +29,13 @@ namespace _2001.Controllers
 
 
         [HttpPost]
-        public IActionResult Login([FromBody] LoginRequest request)
+        public IActionResult Login(string username, string password)
         {
-
             //checks if username and password has been filled in
-            if (request == null || string.IsNullOrEmpty(request.Username) || string.IsNullOrEmpty(request.Password))
+            if (@username == null || string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
             {
                 return BadRequest("Invalid login request");
             }
-
-            try
-            {
                 string connectionString = Configuration.GetConnectionString("DefaultConnection"); //connects
 
                 using (SqlConnection connection = new SqlConnection(connectionString))
@@ -50,8 +46,8 @@ namespace _2001.Controllers
 
                     using (SqlCommand command = new SqlCommand(query, connection))
                     {
-                        command.Parameters.AddWithValue("@Username", request.Username); //adds username and password to variables
-                        command.Parameters.AddWithValue("@Password", request.Password); 
+                        command.Parameters.AddWithValue("@Username", username); //adds username and password to variables
+                        command.Parameters.AddWithValue("@Password", password); 
 
                         var result = command.ExecuteScalar();
 
@@ -65,12 +61,6 @@ namespace _2001.Controllers
                         }
                     }
                 }
-            }
-            catch (Exception ex)
-            {
-                // Log and show error
-                return StatusCode(500, "Internal code error");
-            }
         }
     }
 
