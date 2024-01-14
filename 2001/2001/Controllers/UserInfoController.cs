@@ -48,45 +48,19 @@ namespace _2001.Controllers
             Configuration = configuration;
         }
 
-        // GET: api/<UserInfoController>
-        //get whole table
-        [HttpGet]
-        public IActionResult Get() //changes format so results are on separate lines
-        {
-            string connectionString = Configuration.GetConnectionString("DefaultConnection"); //change to connection string
 
-            using (SqlConnection connection = new SqlConnection(connectionString))
-            {
-                connection.Open();
-                string sqlSelect = "SELECT * FROM CW2.CombinedData";//add sql command
-
-                using (SqlCommand command = new SqlCommand(sqlSelect, connection))
-                {
-                    using (SqlDataReader reader = command.ExecuteReader())
-                    {
-                        var datatable = new System.Data.DataTable();
-                        datatable.Load(reader);
-
-                        string jsonResult = Newtonsoft.Json.JsonConvert.SerializeObject(datatable);
-
-                        // Close connection
-                        connection.Close();
-
-                        return Content(jsonResult, "application/json");
-                    }
-                }
-
-            }
-
-        }
 
         // GET api/<UserInfoController>/5
         //get data under id
-        [HttpGet("{id}")]
-        public IActionResult Get(int id)
+        [HttpGet]
+        public IActionResult Get()
         {
+
             string connectionString = Configuration.GetConnectionString("DefaultConnection");
-            if (id == UserLogin.userloginid) {
+            int userId = UserLogin.userloginid;
+
+            if (userId > 0) //makes sure there is data in userId
+            {
                 using (SqlConnection connection = new SqlConnection(connectionString))
                 {
                     connection.Open();
@@ -97,7 +71,7 @@ namespace _2001.Controllers
                     using (SqlCommand command = new SqlCommand(sqlSelect, connection))
                     {
                         // Add my parameter
-                        command.Parameters.AddWithValue("@UserId", id);
+                        command.Parameters.AddWithValue("@UserId", userId);
 
                         // fills DataTable
                         using (SqlDataAdapter dataAdapter = new SqlDataAdapter(command))
@@ -118,9 +92,9 @@ namespace _2001.Controllers
             }
             else
             {
-                return Unauthorized("Unauthorized access");
+                return Unauthorized("Please Login");
             }
-           
+
         }
 
 
@@ -197,8 +171,8 @@ namespace _2001.Controllers
 
 
         // PUT api/<UserInfoController>/5
-        [HttpPut("{id}")]
-        public IActionResult Put(int id, [FromBody] UserInformationUpdateModel updateModel)
+        [HttpPut]
+        public IActionResult Put([FromBody] UserInformationUpdateModel updateModel)
         {
             if (updateModel == null) //checks to see if there is data
             {
@@ -206,7 +180,9 @@ namespace _2001.Controllers
             }
 
             string connectionString = Configuration.GetConnectionString("DefaultConnection");
-            if (id == UserLogin.userloginid)
+            int userId = UserLogin.userloginid;
+
+            if (userId > 0) //makes sure there is data in userId
             {
 
                 using (SqlConnection connection = new SqlConnection(connectionString))
@@ -222,7 +198,7 @@ namespace _2001.Controllers
                             string checkUserExistsQuery = "SELECT COUNT(*) FROM CW2.User_Information WHERE user_id = @UserId";
                             using (SqlCommand checkUserExistsCommand = new SqlCommand(checkUserExistsQuery, connection, transaction))
                             {
-                                checkUserExistsCommand.Parameters.AddWithValue("@UserId", id);
+                                checkUserExistsCommand.Parameters.AddWithValue("@UserId", userId);
                                 int userCount = (int)checkUserExistsCommand.ExecuteScalar();
 
                                 if (userCount == 0)
@@ -235,7 +211,7 @@ namespace _2001.Controllers
                             string updateColumnQuery = "UPDATE CW2.User_Information SET " + updateModel.ColumnName + " = @" + updateModel.ColumnName + " WHERE user_id = @UserId";
                             using (SqlCommand updateColumnCommand = new SqlCommand(updateColumnQuery, connection, transaction))
                             {
-                                updateColumnCommand.Parameters.AddWithValue("@UserId", id);
+                                updateColumnCommand.Parameters.AddWithValue("@UserId", userId);
                                 updateColumnCommand.Parameters.AddWithValue("@" + updateModel.ColumnName, updateModel.GetValue());
 
                                 updateColumnCommand.ExecuteNonQuery();
@@ -254,63 +230,70 @@ namespace _2001.Controllers
                             // return message
                             Console.WriteLine(ex.Message);
 
-                            return BadRequest("Failed to update user information");
+                            return BadRequest("Unable to update user");
                         }
                     }
                 }
             }
             else
             {
-                return Unauthorized("Unauthorized access");
+                return Unauthorized("Please Login");
             }
         }
 
 
-        [HttpDelete("{id}")]
-        public IActionResult Delete(int id)
+        [HttpDelete]
+        public IActionResult Delete()
         {
             string connectionString = Configuration.GetConnectionString("DefaultConnection");
+            int userId = UserLogin.userloginid; // Get user id from UserLogin
 
-            using (SqlConnection connection = new SqlConnection(connectionString))
+            if (userId > 0)
             {
-                connection.Open(); //open connection
-
-                // Begin a transaction
-                using (SqlTransaction transaction = connection.BeginTransaction())
+                using (SqlConnection connection = new SqlConnection(connectionString))
                 {
-                    try
+                    connection.Open(); // Open connection
+
+                    // Begin a transaction
+                    using (SqlTransaction transaction = connection.BeginTransaction())
                     {
-                        // Use the stored procedure to delete data
-                        using (SqlCommand command = new SqlCommand("CW2.delete_profile", connection, transaction))
+                        try
                         {
-                            command.CommandType = CommandType.StoredProcedure;
+                            // Use the stored procedure to delete data
+                            using (SqlCommand command = new SqlCommand("CW2.delete_profile", connection, transaction))
+                            {
+                                command.CommandType = CommandType.StoredProcedure;
 
-                            // Add parameter
-                            command.Parameters.AddWithValue("@user_id", id);
+                                //parameter
+                                command.Parameters.AddWithValue("@user_id", userId);
 
-                            // Run stored procedure
-                            command.ExecuteNonQuery();
+                                // Run stored procedure
+                                command.ExecuteNonQuery();
+                            }
+
+                            // Commit the transaction if successful
+                            transaction.Commit();
+
+                            return Ok("User deleted successfully");
                         }
+                        catch (Exception ex)
+                        {
+                            // Rollback the transaction if errors
+                            transaction.Rollback();
 
-                        // Commit the transaction if successful
-                        transaction.Commit();
+                            // Return message
+                            Console.WriteLine(ex.Message);
 
-                        return Ok("User deleted successfully");
-                    }
-                    catch (Exception ex)
-                    {
-                        // Rollback the transaction if errors
-                        transaction.Rollback();
-
-                        // Return message
-                        Console.WriteLine(ex.Message);
-
-                        return BadRequest("Failed to delete user");
+                            return BadRequest("Failed to delete user");
+                        }
                     }
                 }
             }
+            else
+            {
+                return Unauthorized("Please Login");
+            }
         }
-
-
     }
 }
+
