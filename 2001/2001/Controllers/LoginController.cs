@@ -10,10 +10,10 @@ namespace _2001.Controllers
     public class LoginController : ControllerBase
     {
 
-        //gets the entered username and password
+        //gets the entered email and password
         public class LoginRequest
         {
-            public string Username { get; set; }
+            public string Email { get; set; }
             public string Password { get; set; }
         }
        
@@ -29,12 +29,12 @@ namespace _2001.Controllers
 
 
         [HttpPost]
-        public IActionResult Login(string username, string password)
+        public IActionResult Login(string email, string password)
         {
             
 
-            //checks if username and password has been filled in
-            if (@username == null || string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
+            //checks if email and password has been filled in
+            if (@email == null || string.IsNullOrEmpty(email) || string.IsNullOrEmpty(password))
             {
                 return BadRequest("Invalid login request");
             }
@@ -44,11 +44,11 @@ namespace _2001.Controllers
                 {
                     connection.Open(); //opens connection
 
-                    string query = "SELECT user_id FROM CW2.User_Information WHERE username = @Username AND password = @Password"; //sql command to check if username and password matches a user_id
+                    string query = "SELECT user_id FROM CW2.User_Information WHERE email = @Email AND password = @Password"; //sql command to check if email and password matches a user_id
 
                     using (SqlCommand command = new SqlCommand(query, connection))
                     {
-                        command.Parameters.AddWithValue("@Username", username); //adds username and password to variables
+                        command.Parameters.AddWithValue("@Email", email); //adds email and password to variables
                         command.Parameters.AddWithValue("@Password", password); 
 
                         var result = command.ExecuteScalar();
