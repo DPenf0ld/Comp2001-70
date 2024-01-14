@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using System.Configuration;
+using System.Data;
 using System.Data.SqlClient;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
@@ -47,5 +48,52 @@ namespace _2001.Controllers
             }
 
         }
+
+        [HttpDelete]
+        public IActionResult Delete(int id)
+        {
+            string connectionString = Configuration.GetConnectionString("DefaultConnection");
+
+            using (SqlConnection connection = new SqlConnection(connectionString))
+            {
+                connection.Open(); //open connection
+
+                // Begin a transaction
+                using (SqlTransaction transaction = connection.BeginTransaction())
+                {
+                    try
+                    {
+                        // Use the stored procedure to delete data
+                        using (SqlCommand command = new SqlCommand("CW2.delete_profile", connection, transaction))
+                        {
+                            command.CommandType = CommandType.StoredProcedure;
+
+                            // Add parameter
+                            command.Parameters.AddWithValue("@user_id", id);
+
+                            // Run stored procedure
+                            command.ExecuteNonQuery();
+                        }
+
+                        // Commit the transaction if successful
+                        transaction.Commit();
+
+                        return Ok("User deleted successfully");
+                    }
+                    catch (Exception ex)
+                    {
+                        // Rollback the transaction if errors
+                        transaction.Rollback();
+
+                        // Return message
+                        Console.WriteLine(ex.Message);
+
+                        return BadRequest("Failed to delete user");
+                    }
+                }
+            }
+        }
+
     }
 }
+
