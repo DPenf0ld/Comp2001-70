@@ -53,7 +53,6 @@ namespace _2001.Controllers
         [HttpGet]
         public IActionResult Get()
         {
-
             string connectionString = Configuration.GetConnectionString("DefaultConnection");
             int userId = UserLogin.userloginid;
 
@@ -61,7 +60,7 @@ namespace _2001.Controllers
             {
                 using (SqlConnection connection = new SqlConnection(connectionString))
                 {
-                    connection.Open();
+                    connection.Open(); //opens connection
 
                     // sql command
                     string sqlSelect = "SELECT * FROM CW2.CombinedData WHERE user_id = @UserId";
@@ -140,7 +139,6 @@ namespace _2001.Controllers
                             command.Parameters.AddWithValue("@marketing_language", user.MarketingLanguage);
                             command.Parameters.AddWithValue("@activity_id", user.ActivityId);
 
-
                             // Run stored procedure
                             command.ExecuteNonQuery();
                         }
@@ -183,7 +181,6 @@ namespace _2001.Controllers
 
             if (userId > 0) //makes sure there is data in userId
             {
-
                 using (SqlConnection connection = new SqlConnection(connectionString))
                 {
                     connection.Open(); //open connection

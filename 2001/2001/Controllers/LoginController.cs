@@ -20,7 +20,7 @@ namespace _2001.Controllers
         [HttpPost]
         public async Task<IActionResult> Post(string Email, string Password)
         {
-            if (@Email == null || string.IsNullOrEmpty(Email) || string.IsNullOrEmpty(Password)) //NOT WORKING
+            if (@Email == null || string.IsNullOrEmpty(Email) || string.IsNullOrEmpty(Password)) 
             {
                 return BadRequest("Invalid login request");
             }
@@ -94,6 +94,7 @@ namespace _2001.Controllers
                             {
                                 UserLogin.userloginid = userId;
                                 UserLogin.Loggedin = true;
+                                UserLogin.admin = false;
                                 return Ok("Logged in as user successfully");
                             }
                             else
