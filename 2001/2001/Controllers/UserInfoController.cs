@@ -98,21 +98,14 @@ namespace _2001.Controllers
 
 
         // POST api/<UserInfoController>
-
         [HttpPost]
         public IActionResult Post([FromBody] UserInformationInsertModel user)
         {
-            if (user == null)
-            {
-                return BadRequest("Invalid data");
-            }
-
             string connectionString = Configuration.GetConnectionString("DefaultConnection");
 
             using (SqlConnection connection = new SqlConnection(connectionString))
             {
                 connection.Open();
-
 
                 // Begin transaction
                 using (SqlTransaction transaction = connection.BeginTransaction())
