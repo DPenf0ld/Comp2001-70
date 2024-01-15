@@ -1,5 +1,8 @@
 # Comp2001-70 API Documentation
 
+## Project information
+The task is to create a backend API which communicates with my SQL database. Additionally, an authenticator API must be used to verify admin accounts.
+
 ## Controllers:
 
 ### Login:
