@@ -7,12 +7,12 @@ namespace _2001.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class AuthenticatorController : ControllerBase
+    public class LoginController : ControllerBase
     {
         private const string ApiBaseUrl = "https://web.socem.plymouth.ac.uk/COMP2001/auth/api/users";
         public IConfiguration Configuration { get; }
 
-        public AuthenticatorController(IConfiguration configuration)
+        public LoginController(IConfiguration configuration)
         {
             Configuration = configuration;
         }

@@ -20,29 +20,42 @@ namespace _2001.Controllers
         [HttpGet]
         public IActionResult Get() //changes format so results are on separate lines
         {
-            string connectionString = Configuration.GetConnectionString("DefaultConnection"); //change to connection string
-
-            using (SqlConnection connection = new SqlConnection(connectionString))
+            if (UserLogin.admin == true)
             {
-                connection.Open();
-                string sqlSelect = "SELECT * FROM CW2.CombinedData";//add sql command
 
-                using (SqlCommand command = new SqlCommand(sqlSelect, connection))
+
+                string connectionString = Configuration.GetConnectionString("DefaultConnection"); //change to connection string
+
+                using (SqlConnection connection = new SqlConnection(connectionString))
                 {
-                    using (SqlDataReader reader = command.ExecuteReader())
+                    connection.Open();
+                    string sqlSelect = "SELECT * FROM CW2.CombinedData";//add sql command
+
+                    using (SqlCommand command = new SqlCommand(sqlSelect, connection))
                     {
-                        var datatable = new System.Data.DataTable();
-                        datatable.Load(reader);
+                        using (SqlDataReader reader = command.ExecuteReader())
+                        {
+                            var datatable = new System.Data.DataTable();
+                            datatable.Load(reader);
 
-                        string jsonResult = Newtonsoft.Json.JsonConvert.SerializeObject(datatable);
+                            string jsonResult = Newtonsoft.Json.JsonConvert.SerializeObject(datatable);
 
-                        // Close connection
-                        connection.Close();
+                            // Close connection
+                            connection.Close();
 
-                        return Content(jsonResult, "application/json");
+                            return Content(jsonResult, "application/json");
+                        }
                     }
-                }
 
+                }
+            }
+            else if (UserLogin.Loggedin == false)
+            {
+                return Content("Please login to an admin account");
+            }
+            else
+            {
+                return Content("Account does not have admin privileges");
             }
 
         }
@@ -50,45 +63,68 @@ namespace _2001.Controllers
         [HttpDelete]
         public IActionResult Delete(int id)
         {
-            string connectionString = Configuration.GetConnectionString("DefaultConnection");
-
-            using (SqlConnection connection = new SqlConnection(connectionString))
+            if (UserLogin.admin == true)
             {
-                connection.Open(); //open connection
+                string connectionString = Configuration.GetConnectionString("DefaultConnection");
 
-                // Begin a transaction
-                using (SqlTransaction transaction = connection.BeginTransaction())
+                using (SqlConnection connection = new SqlConnection(connectionString))
                 {
-                    try
+                    connection.Open(); //open connection
+
+                    string checkUserExists = "SELECT COUNT(*) FROM CW2.User_Information WHERE user_id = @UserId";
+                    using (SqlCommand checkUserExistsCommand = new SqlCommand(checkUserExists, connection))
                     {
-                        // Use the stored procedure to delete data
-                        using (SqlCommand command = new SqlCommand("CW2.delete_profile", connection, transaction))
+                        checkUserExistsCommand.Parameters.AddWithValue("@UserId", id);
+                        int userCount = (int)checkUserExistsCommand.ExecuteScalar();
+
+                        if (userCount == 0)
                         {
-                            command.CommandType = CommandType.StoredProcedure;
-
-                            // Add parameter
-                            command.Parameters.AddWithValue("@user_id", id);
-
-                            // Run stored procedure
-                            command.ExecuteNonQuery();
+                            return NotFound("User not found");
                         }
-
-                        // Commit the transaction if successful
-                        transaction.Commit();
-
-                        return Ok("User deleted successfully");
                     }
-                    catch (Exception ex)
+
+                    // Begin a transaction
+                    using (SqlTransaction transaction = connection.BeginTransaction())
                     {
-                        // Rollback the transaction if errors
-                        transaction.Rollback();
+                        try
+                        {
+                            // Use the stored procedure to delete data
+                            using (SqlCommand command = new SqlCommand("CW2.delete_profile", connection, transaction))
+                            {
+                                command.CommandType = CommandType.StoredProcedure;
 
-                        // Return message
-                        Console.WriteLine(ex.Message);
+                                // Add parameter
+                                command.Parameters.AddWithValue("@user_id", id);
 
-                        return BadRequest("Failed to delete user");
+                                // Run stored procedure
+                                command.ExecuteNonQuery();
+                            }
+
+                            // Commit the transaction if successful
+                            transaction.Commit();
+
+                            return Ok("User deleted successfully");
+                        }
+                        catch (Exception ex)
+                        {
+                            // Rollback the transaction if errors
+                            transaction.Rollback();
+
+                            // Return message
+                            Console.WriteLine(ex.Message);
+
+                            return BadRequest("Failed to delete user");
+                        }
                     }
                 }
+            }
+            else if (UserLogin.Loggedin == false)
+            {
+                return Content("Please login to an admin account");
+            }
+            else
+            {
+                return Content("Account does not have admin privileges");
             }
         }
 
