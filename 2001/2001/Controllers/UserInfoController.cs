@@ -114,6 +114,7 @@ namespace _2001.Controllers
             {
                 connection.Open();
 
+
                 // Begin transaction
                 using (SqlTransaction transaction = connection.BeginTransaction())
                 {
